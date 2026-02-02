@@ -12,15 +12,20 @@ async function main() {
   console.log('✅ Conectado a MongoDB');
 
   const ahora = new Date();
-  const en24h = new Date(ahora.getTime() + 24 * 60 * 60 * 1000);
+  // fin del día de mañana (23:59:59)
+const finManana = new Date();
+finManana.setDate(finManana.getDate() + 1);
+finManana.setHours(23, 59, 59, 999);
 
   // 1️⃣ Buscar llamadas próximas (no canceladas y sin notificar)
-  const llamadas = await db.collection('Llamadas').find({
-    fechaLlamada: { $gte: ahora, $lte: en24h },
-    Estado: { $ne: 'cancelado' },
-    recordatorioEnviado: { $ne: true }
-  }).toArray();
-
+ const llamadas = await db.collection('Llamadas').find({
+  fechaLlamada: {
+    $gte: ahora,
+    $lte: finManana
+  },
+  Estado: { $ne: 'cancelado' },
+  recordatorioEnviado: { $ne: true }
+}).toArray();
   console.log(`📞 Llamadas próximas encontradas: ${llamadas.length}`);
 
   if (llamadas.length === 0) {
@@ -44,21 +49,31 @@ async function main() {
     const fecha = new Date(llamada.fechaLlamada).toLocaleString('es-MX');
 
     for (const admin of admins) {
-      const msg = {
-        to: admin.Correo,
-        from: 'croj23@gmail.com',
-        subject: '📅 Recordatorio de llamada próxima',
-        html: `
-          <h3>📞 Recordatorio de llamada</h3>
-          <p>Tienes una llamada programada para mañana:</p>
-          <ul>
-            <li><strong>Cliente:</strong> ${llamada.Nombre}</li>
-            <li><strong>Empresa:</strong> ${llamada.Empresa}</li>
-            <li><strong>Fecha:</strong> ${fecha}</li>
-            <li><strong>Asunto:</strong> ${llamada.Asunto || '-'}</li>
-          </ul>
-        `
-      };
+     const msg = {
+  to: admin.Correo,
+  from: {
+    email: 'al24320591@utcj.edu.mx',
+    name: 'Recordatorio Cam'
+  },
+  subject: 'Agenda: llamada programada para mañana',
+  text: `Tienes una llamada programada con ${llamada.Nombre} mañana.`,
+  html: `
+    <p>Tienes una llamada programada:</p>
+    <ul>
+      <li><strong>Cliente:</strong> ${llamada.Nombre}</li>
+      <li><strong>Empresa:</strong> ${llamada.Empresa}</li>
+      <li><strong>Fecha:</strong> ${fecha}</li>
+        <li><strong>Asunto:</strong> ${llamada.Asunto}</li>
+        <li><strong>Notas:</strong> ${llamada.Notas}</li>
+        <li><strong>Direccion:</strong> ${llamada.Direccion}</li>
+    </ul>
+    <hr>
+    <p style="font-size:12px;color:#666">
+      Este correo es un recordatorio automático del sistema Agenda.
+    </p>
+  `
+};
+
 
       try {
         await sgMail.send(msg);
@@ -80,4 +95,3 @@ async function main() {
 }
 
 main().catch(console.error);
-
