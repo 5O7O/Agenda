@@ -1,4 +1,4 @@
-require('dotenv').config();
+
 const { MongoClient } = require('mongodb');
 const sgMail = require('@sendgrid/mail');
 
@@ -46,7 +46,7 @@ async function main() {
     for (const admin of admins) {
       const msg = {
         to: admin.Correo,
-        from: 'crm@tusistema.com',
+        from: 'croj23@gmail.com',
         subject: '📅 Recordatorio de llamada próxima',
         html: `
           <h3>📞 Recordatorio de llamada</h3>
@@ -80,3 +80,4 @@ async function main() {
 }
 
 main().catch(console.error);
+
