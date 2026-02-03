@@ -1,4 +1,3 @@
-
 const { MongoClient } = require('mongodb');
 const sgMail = require('@sendgrid/mail');
 
@@ -46,16 +45,7 @@ finManana.setHours(23, 59, 59, 999);
 
   // 3️⃣ Enviar correos
   for (const llamada of llamadas) {
-    const fecha = new Intl.DateTimeFormat('es-MX', {
-  timeZone: 'America/Ciudad_Juarez',
-  year: 'numeric',
-  month: 'long',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: true
-}).format(new Date(llamada.fechaLlamada));
-
+    const fecha = new Date(llamada.fechaLlamada).toLocaleString('es-MX');
 
     for (const admin of admins) {
      const msg = {
@@ -104,4 +94,3 @@ finManana.setHours(23, 59, 59, 999);
 }
 
 main().catch(console.error);
-
