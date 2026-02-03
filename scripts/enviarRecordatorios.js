@@ -45,7 +45,10 @@ finManana.setHours(23, 59, 59, 999);
 
   // 3️⃣ Enviar correos
   for (const llamada of llamadas) {
-    const fecha = new Date(llamada.fechaLlamada).toLocaleString('America/Ciudad_Juarez');
+    const fecha = new Date(llamada.fechaLlamada).toLocaleString('es-MX', {
+  timeZone: 'America/Chihuahua',
+  hour12: true
+});
 
     for (const admin of admins) {
      const msg = {
@@ -94,4 +97,3 @@ finManana.setHours(23, 59, 59, 999);
 }
 
 main().catch(console.error);
-
