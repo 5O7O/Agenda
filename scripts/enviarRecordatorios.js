@@ -4,26 +4,6 @@ const sgMail = require('@sendgrid/mail');
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Función para formatear fecha en zona horaria de Ciudad Juárez
-function formatearFechaJuarez(fechaUTC) {
-  const fecha = new Date(fechaUTC);
-  
-  // Opciones para Ciudad Juárez (Chihuahua, México)
-  const opciones = {
-    timeZone: 'America/Chihuahua',
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  };
-  
-  // Formatear en español
-  return fecha.toLocaleString('es-MX', opciones);
-}
-
 async function main() {
   const client = new MongoClient(process.env.MONGO_URI);
   await client.connect();
@@ -32,8 +12,7 @@ async function main() {
   console.log('✅ Conectado a MongoDB');
 
   const ahora = new Date();
-  
-  // Fin del día de mañana (23:59:59) en tiempo UTC
+  // fin del día de mañana (23:59:59)
   const finManana = new Date();
   finManana.setDate(finManana.getDate() + 1);
   finManana.setHours(23, 59, 59, 999);
@@ -68,8 +47,25 @@ async function main() {
 
   // 3️⃣ Enviar correos
   for (const llamada of llamadas) {
-    // Usar la función formateada para Ciudad Juárez
-    const fechaFormateada = formatearFechaJuarez(llamada.fechaLlamada);
+    // Formatear fecha con zona horaria de Ciudad Juárez (UTC-6 o UTC-7 según horario de verano)
+    const fechaLlamada = new Date(llamada.fechaLlamada);
+    const fechaFormateada = fechaLlamada.toLocaleString('es-MX', {
+      timeZone: 'America/Ciudad_Juarez',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+
+    // Opción más simple (solo hora y fecha):
+    const fechaSimple = fechaLlamada.toLocaleString('es-MX', {
+      timeZone: 'America/Ciudad_Juarez',
+      dateStyle: 'long',
+      timeStyle: 'short'
+    });
 
     for (const admin of admins) {
       const msg = {
@@ -85,23 +81,21 @@ async function main() {
           <ul>
             <li><strong>Cliente:</strong> ${llamada.Nombre}</li>
             <li><strong>Empresa:</strong> ${llamada.Empresa}</li>
-            <li><strong>Fecha y hora (Ciudad Juárez):</strong> ${fechaFormateada}</li>
+            <li><strong>Fecha (Ciudad Juárez):</strong> ${fechaFormateada}</li>
             <li><strong>Asunto:</strong> ${llamada.Asunto}</li>
-            <li><strong>Notas:</strong> ${llamada.Notas}</li>
-            <li><strong>Dirección:</strong> ${llamada.Direccion}</li>
-            <li><strong>Teléfono:</strong> ${llamada.Telefono}</li>
+            <li><strong>Notas:</strong> ${llamada.Notas || 'N/A'}</li>
+            <li><strong>Dirección:</strong> ${llamada.Direccion || 'N/A'}</li>
           </ul>
           <hr>
           <p style="font-size:12px;color:#666">
-            Este correo es un recordatorio automático del sistema Agenda.<br>
-            Hora local: ${new Date().toLocaleString('es-MX', { timeZone: 'America/Chihuahua' })}
+            Este correo es un recordatorio automático del sistema Agenda.
           </p>
         `
       };
 
       try {
         await sgMail.send(msg);
-        console.log(`📧 Correo enviado a ${admin.Correo} - Fecha: ${fechaFormateada}`);
+        console.log(`📧 Correo enviado a ${admin.Correo}`);
       } catch (error) {
         console.error('❌ Error enviando correo:', error.message);
       }
