@@ -1,0 +1,15 @@
+{
+  "name": "agenda-recordatorios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Script de recordatorios de llamadas",
+  "main": "script/enviarRecordatorios.js",
+  "scripts": {
+    "start": "node script/enviarRecordatorios.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mongodb": "^7.0.0",
+    "@sendgrid/mail": "^8.1.4"
+  }
+}
