@@ -47,7 +47,7 @@ finManana.setHours(23, 59, 59, 999);
   // 3️⃣ Enviar correos
   for (const llamada of llamadas) {
     const fecha = new Intl.DateTimeFormat('es-MX', {
-  timeZone: 'America/Mexico_City',
+  timeZone: 'America/Ciudad_Juarez',
   year: 'numeric',
   month: 'long',
   day: '2-digit',
@@ -104,3 +104,4 @@ finManana.setHours(23, 59, 59, 999);
 }
 
 main().catch(console.error);
+
