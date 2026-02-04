@@ -11,37 +11,45 @@ async function main() {
 
   console.log('✅ Conectado a MongoDB');
 
- const timeZone = 'America/Ciudad_Juarez';
+  const timeZone = 'America/Ciudad_Juarez';
 
-// Inicio de mañana (00:00)
-const inicioManana = new Date(
-  new Date().toLocaleString('en-US', { timeZone })
-);
-inicioManana.setDate(inicioManana.getDate() + 1);
-inicioManana.setHours(0, 0, 0, 0);
+  // 📅 Fecha de MAÑANA en zona horaria de Ciudad Juárez
+  const manana = new Date();
+  manana.setDate(manana.getDate() + 1);
 
-// Fin de mañana (23:59:59)
-const finManana = new Date(inicioManana);
-finManana.setHours(23, 59, 59, 999);
+  // 1️⃣ Buscar llamadas del día siguiente (Ciudad Juárez)
+  const llamadas = await db.collection('Llamadas').find({
+    Estado: { $ne: 'cancelado' },
+    recordatorioEnviado: { $ne: true },
+    $expr: {
+      $eq: [
+        {
+          $dateToString: {
+            date: "$fechaLlamada",
+            format: "%Y-%m-%d",
+            timezone: timeZone
+          }
+        },
+        {
+          $dateToString: {
+            date: manana,
+            format: "%Y-%m-%d",
+            timezone: timeZone
+          }
+        }
+      ]
+    }
+  }).toArray();
 
-  // 1️⃣ Buscar llamadas próximas (no canceladas y sin notificar)
-const llamadas = await db.collection('Llamadas').find({
-  fechaLlamada: {
-    $gte: inicioManana,
-    $lte: finManana
-  },
-  Estado: { $ne: 'cancelado' },
-  recordatorioEnviado: { $ne: true }
-}).toArray();
-
-  console.log(`📞 Llamadas próximas encontradas: ${llamadas.length}`);
+  console.log(`📞 Llamadas para mañana encontradas: ${llamadas.length}`);
 
   if (llamadas.length === 0) {
     await client.close();
+    console.log('ℹ️ No hay llamadas para notificar');
     return;
   }
 
-  // 2️⃣ Obtener todos los admins
+  // 2️⃣ Obtener usuarios admin
   const admins = await db.collection('Usuarios').find({
     Rol: 'admin'
   }).toArray();
@@ -54,44 +62,50 @@ const llamadas = await db.collection('Llamadas').find({
 
   // 3️⃣ Enviar correos
   for (const llamada of llamadas) {
-    const fecha = new Date(llamada.fechaLlamada).toLocaleString('es-MX', {
-  timeZone: 'America/Ciudad_Juarez',
-  dateStyle: 'full',
-  timeStyle: 'short'
-});
+    const fechaFormateada = new Date(llamada.fechaLlamada).toLocaleString(
+      'es-MX',
+      {
+        timeZone,
+        dateStyle: 'full',
+        timeStyle: 'short'
+      }
+    );
 
     for (const admin of admins) {
-     const msg = {
-  to: admin.Correo,
-  from: {
-    email: 'al24320591@utcj.edu.mx',
-    name: 'Recordatorio Cam'
-  },
-  subject: 'Agenda: llamada programada para mañana',
-  text: `Tienes una llamada programada con ${llamada.Nombre} mañana.`,
-  html: `
-    <p>Tienes una llamada programada:</p>
-    <ul>
-      <li><strong>Cliente:</strong> ${llamada.Nombre}</li>
-      <li><strong>Empresa:</strong> ${llamada.Empresa}</li>
-      <li><strong>Fecha:</strong> ${fecha}</li>
-        <li><strong>Asunto:</strong> ${llamada.Asunto}</li>
-        <li><strong>Notas:</strong> ${llamada.Notas}</li>
-        <li><strong>Direccion:</strong> ${llamada.Direccion}</li>
-    </ul>
-    <hr>
-    <p style="font-size:12px;color:#666">
-      Este correo es un recordatorio automático del sistema Agenda.
-    </p>
-  `
-};
-
+      const msg = {
+        to: admin.Correo,
+        from: {
+          email: 'al24320591@utcj.edu.mx', // ⚠️ debe ser sender verificado en SendGrid
+          name: 'Agenda CRM'
+        },
+        subject: '📅 Recordatorio: llamada programada para mañana',
+        text: `Tienes una llamada programada con ${llamada.Nombre} mañana.`,
+        html: `
+          <h3>📞 Recordatorio de llamada</h3>
+          <p>Tienes una llamada programada para mañana:</p>
+          <ul>
+            <li><strong>Cliente:</strong> ${llamada.Nombre}</li>
+            <li><strong>Empresa:</strong> ${llamada.Empresa}</li>
+            <li><strong>Fecha:</strong> ${fechaFormateada}</li>
+            <li><strong>Asunto:</strong> ${llamada.Asunto || '-'}</li>
+            <li><strong>Notas:</strong> ${llamada.Notas || '-'}</li>
+            <li><strong>Dirección:</strong> ${llamada.Direccion || '-'}</li>
+          </ul>
+          <hr>
+          <p style="font-size:12px;color:#666">
+            Este correo es un recordatorio automático del sistema Agenda CRM.
+          </p>
+        `
+      };
 
       try {
         await sgMail.send(msg);
         console.log(`📧 Correo enviado a ${admin.Correo}`);
       } catch (error) {
-        console.error('❌ Error enviando correo:', error.message);
+        console.error(
+          `❌ Error enviando correo a ${admin.Correo}:`,
+          error.message
+        );
       }
     }
 
@@ -103,7 +117,10 @@ const llamadas = await db.collection('Llamadas').find({
   }
 
   await client.close();
-  console.log('🏁 Proceso finalizado');
+  console.log('🏁 Proceso finalizado correctamente');
 }
 
-main().catch(console.error);
+main().catch(error => {
+  console.error('❌ Error general:', error);
+  process.exit(1);
+});
