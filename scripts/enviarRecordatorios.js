@@ -11,21 +11,29 @@ async function main() {
 
   console.log('✅ Conectado a MongoDB');
 
-  const ahora = new Date();
-  // fin del día de mañana (23:59:59)
-const finManana = new Date();
-finManana.setDate(finManana.getDate() + 1);
+ const timeZone = 'America/Ciudad_Juarez';
+
+// Inicio de mañana (00:00)
+const inicioManana = new Date(
+  new Date().toLocaleString('en-US', { timeZone })
+);
+inicioManana.setDate(inicioManana.getDate() + 1);
+inicioManana.setHours(0, 0, 0, 0);
+
+// Fin de mañana (23:59:59)
+const finManana = new Date(inicioManana);
 finManana.setHours(23, 59, 59, 999);
 
   // 1️⃣ Buscar llamadas próximas (no canceladas y sin notificar)
- const llamadas = await db.collection('Llamadas').find({
+const llamadas = await db.collection('Llamadas').find({
   fechaLlamada: {
-    $gte: ahora,
+    $gte: inicioManana,
     $lte: finManana
   },
   Estado: { $ne: 'cancelado' },
   recordatorioEnviado: { $ne: true }
 }).toArray();
+
   console.log(`📞 Llamadas próximas encontradas: ${llamadas.length}`);
 
   if (llamadas.length === 0) {
@@ -46,7 +54,11 @@ finManana.setHours(23, 59, 59, 999);
 
   // 3️⃣ Enviar correos
   for (const llamada of llamadas) {
-    const fecha = new Date(llamada.fechaLlamada).toLocaleString('es-MX');
+    const fecha = new Date(llamada.fechaLlamada).toLocaleString('es-MX', {
+  timeZone: 'America/Ciudad_Juarez',
+  dateStyle: 'full',
+  timeStyle: 'short'
+});
 
     for (const admin of admins) {
      const msg = {
