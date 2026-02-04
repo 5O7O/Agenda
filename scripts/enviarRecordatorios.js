@@ -76,7 +76,7 @@ async function main() {
         to: admin.Correo,
         from: {
           email: 'al24320591@utcj.edu.mx', // ⚠️ debe ser sender verificado en SendGrid
-          name: 'Agenda CRM'
+          name: 'Agenda CAM'
         },
         subject: '📅 Recordatorio: llamada programada para mañana',
         text: `Tienes una llamada programada con ${llamada.Nombre} mañana.`,
@@ -124,3 +124,4 @@ main().catch(error => {
   console.error('❌ Error general:', error);
   process.exit(1);
 });
+
