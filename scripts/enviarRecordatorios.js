@@ -51,7 +51,7 @@ async function main() {
 
   // 2️⃣ Obtener usuarios admin
   const admins = await db.collection('Usuarios').find({
-    Rol: 'admin'
+    Rol: 'user'
   }).toArray();
 
   if (admins.length === 0) {
