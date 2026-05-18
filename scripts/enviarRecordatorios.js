@@ -101,12 +101,13 @@ async function main() {
       try {
         await sgMail.send(msg);
         console.log(`📧 Correo enviado a ${admin.Correo}`);
-      } catch (error) {
-        console.error(
-          `❌ Error enviando correo a ${admin.Correo}:`,
-          error.message
-        );
-      }
+      } } catch (error) {
+  console.error(
+    `❌ Error enviando correo a ${admin.Correo}:`
+  );
+
+  console.error(error.response?.body || error);
+}
     }
 
     // 4️⃣ Marcar llamada como notificada
