@@ -101,10 +101,11 @@ async function main() {
       try {
         await sgMail.send(msg);
         console.log(`📧 Correo enviado a ${admin.Correo}`);
-      } } catch (error) {
-  console.error(
-    `❌ Error enviando correo a ${admin.Correo}:`
-  );
+      } catch (error) {
+        console.error(`❌ Error enviando correo a ${admin.Correo}:`);
+        console.error(error.response?.body || error);
+      }
+    }  // ← este cierra el for (const admin of admins)
 
   console.error(error.response?.body || error);
 }
